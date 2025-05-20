@@ -26,6 +26,7 @@
 #include "sdkconfig.h"
 
 #include "wifi_connection.h"
+#include "wifi_connection_settings.h"
 
 
  /* 
@@ -118,9 +119,6 @@ static void netif_event_handler(
     int32_t event_id, 
     void* event_data)
 {
-    EventGroupHandle_t*  p_event_group;
-    esp_err_t result;
-
     if (event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
         ESP_LOGI("netif_event_handler", "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
@@ -220,8 +218,8 @@ WifiStation::WifiStation(void)
     esp_err_t result;
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = CONFIG_WIFI_SSID,
-            .password = CONFIG_WIFI_PASSWORD,
+            .ssid = WIFI_SSID,
+            .password = WIFI_PASSWORD,
             .scan_method = WIFI_ALL_CHANNEL_SCAN,
             .bssid_set = false,                         /* No need to check MAC address of AP */
             .channel = 0,                               /* AP channel is unknown */

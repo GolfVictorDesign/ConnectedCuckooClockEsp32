@@ -8,3 +8,5 @@ dependencies.lock
 managed_components/
 sdkconfig
 sdkconfig.old
+**/wifi_connection_settings.h
+*clang*
