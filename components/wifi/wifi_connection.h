@@ -8,23 +8,30 @@
 #ifndef COMPONENTS_WIFI_WIFI_CONNECTION_H_
 #define COMPONENTS_WIFI_WIFI_CONNECTION_H_
 
-#if 1
+#include "esp_wifi.h"
+
 
 class WifiConnection
 {
+    
     protected:
-        const static char                   m_log_tag[15];
-        const static wifi_init_config_t     m_wifi_config;
+        const static char               m_logTag[15];
+        const static wifi_init_config_t m_wifiConfig;
 
-        esp_netif_t*        m_pStaNetif;
+        esp_netif_t*                    m_pStaNetif;
 
-        esp_event_handler_instance_t    m_instance_any_id;
-        esp_event_handler_instance_t    m_instance_got_ip;
-        EventGroupHandle_t              m_wifi_event_group;
-        EventGroupHandle_t              m_netif_event_group;
+        esp_event_handler_instance_t    m_instanceAnyId;
+        esp_event_handler_instance_t    m_instanceGotIp;
+        EventGroupHandle_t              m_wifiEventGroup;
+        EventGroupHandle_t              m_netifEventGroup;
+        
+        static void wifi_event_handler(
+                                    void* arg, 
+                                    esp_event_base_t event_base,
+                                    int32_t event_id, 
+                                    void* event_data);
 
-
-        esp_err_t init_wifi(void) { return esp_wifi_init(&m_wifi_config); }
+        esp_err_t init_wifi(void) { return esp_wifi_init(&m_wifiConfig); }
         
         virtual esp_err_t close_connection(void);
 
@@ -41,17 +48,6 @@ class WifiStation : WifiConnection
         WifiStation(void);
 
 };
-#else
-#ifdef __cplusplus
-extern "C" {
-#endif
-    void initWifiConnection(void);
-
-
-#ifdef __cplusplus
-}
-#endif
-#endif
 
 
 #endif /* COMPONENTS_WIFI_WIFI_CONNECTION_H_ */

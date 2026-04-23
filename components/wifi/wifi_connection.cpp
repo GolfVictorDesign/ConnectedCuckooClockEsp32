@@ -10,13 +10,13 @@
 
 #include "esp_err.h"
 #include "esp_log.h"
+#include "esp_log_level.h"
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_wifi_default.h"
 #include "nvs_flash.h"
 
-#include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
@@ -40,11 +40,11 @@
 /**********************************************************************************************************************
  *                                              Constants declarations                                                *
  **********************************************************************************************************************/
-const char WifiConnection::m_log_tag[15] = "WifiConnection";
-const wifi_init_config_t WifiConnection::m_wifi_config = WIFI_INIT_CONFIG_DEFAULT();
+const char WifiConnection::m_logTag[15] = "WifiConnection";
+const wifi_init_config_t WifiConnection::m_wifiConfig = WIFI_INIT_CONFIG_DEFAULT();
 
 
-static void wifi_event_handler(
+void WifiConnection::wifi_event_handler(
     void* arg, 
     esp_event_base_t event_base,
     int32_t event_id, 
@@ -57,19 +57,19 @@ static void wifi_event_handler(
             break;
 
         case ESP_ERR_WIFI_NOT_INIT:
-            ESP_LOGE("wifi_event_handler", "WiFi is not correctly initalized");
+            ESP_LOGE(m_logTag, "WiFi is not correctly initialized");
             break;
 
         case ESP_ERR_WIFI_NOT_STARTED:
-            ESP_LOGE("wifi_event_handler", "WiFi is not started");
+            ESP_LOGE(m_logTag, "WiFi is not started");
             break;
 
         case ESP_ERR_WIFI_CONN:
-            ESP_LOGE("wifi_event_handler", "WiFi internal error, station control block wrong");
+            ESP_LOGE(m_logTag, "WiFi internal error, station control block wrong");
             break;
 
         case ESP_ERR_WIFI_SSID:
-            ESP_LOGE("wifi_event_handler", "SSID of AP which station connects is invalid");
+            ESP_LOGE(m_logTag, "SSID of AP which station connects is invalid");
             break;
 
         default:
@@ -91,24 +91,24 @@ static void wifi_event_handler(
             break;
         
         case WIFI_EVENT_STA_CONNECTED:
-            ESP_LOGI("wifi_event_handler", "Connected to the AP");
+            ESP_LOGI(m_logTag, "Connected to the AP");
             break;
 
         case WIFI_EVENT_STA_DISCONNECTED:
             if (num_retry < CONFIG_WIFI_MAXIMUM_RETRY) {
                 result = esp_wifi_connect();
                 check_wifi_connect_error(result);
-                ESP_LOGI("wifi_event_handler", "retry to connect to the AP");
+                ESP_LOGI(m_logTag, "retry to connect to the AP");
             }
             else {
                 xEventGroupSetBits(*p_wifi_event_group, WIFI_FAIL_BIT);
             }
 
-            ESP_LOGI("wifi_event_handler", "disconnect to the AP fail");
+            ESP_LOGI(m_logTag, "disconnect to the AP fail");
             break;
         
         default:
-            ESP_LOGI("wifi_event_handler", "Got event %d", (int)event_id);
+            ESP_LOGI(m_logTag, "Got event %d", (int)event_id);
             break;
     }
 }
@@ -145,8 +145,8 @@ WifiConnection::WifiConnection(void)
     /*
      * Create a WiFi and netif event groups
      */
-    m_wifi_event_group = xEventGroupCreate();
-    m_netif_event_group = xEventGroupCreate();
+    m_wifiEventGroup = xEventGroupCreate();
+    m_netifEventGroup = xEventGroupCreate();
 
     ESP_ERROR_CHECK(esp_netif_init());
 
@@ -154,15 +154,15 @@ WifiConnection::WifiConnection(void)
     switch (result)
     {
         case ESP_ERR_NO_MEM:
-            ESP_LOGE(m_log_tag, "Cannot create default event loop");
+            ESP_LOGE(m_logTag, "Cannot create default event loop");
             break;
 
         case ESP_ERR_INVALID_STATE:
-            ESP_LOGE(m_log_tag, "Event loop already started");
+            ESP_LOGE(m_logTag, "Event loop already started");
             break;
 
         case ESP_FAIL:
-            ESP_LOGE(m_log_tag, "Failed to create default event loop task");
+            ESP_LOGE(m_logTag, "Failed to create default event loop task");
             break;
 
         default:
@@ -199,7 +199,6 @@ WifiConnection::~WifiConnection(void)
 /***********************************************************************************************************************
  *                                                WiFi Station class                                                   *
  **********************************************************************************************************************/
-
 WifiStation::WifiStation(void)
 {
     auto check_event_register_error = [] (esp_err_t result)
@@ -222,20 +221,42 @@ WifiStation::WifiStation(void)
             .password = WIFI_PASSWORD,
             .scan_method = WIFI_ALL_CHANNEL_SCAN,
             .bssid_set = false,                         /* No need to check MAC address of AP */
+            .bssid = "",
             .channel = 0,                               /* AP channel is unknown */
             .listen_interval = 10,
             .sort_method = WIFI_CONNECT_AP_BY_SIGNAL,
             .threshold = {
                 .rssi = -127,
                 .authmode = WIFI_AUTH_WPA2_PSK,
+                .rssi_5g_adjustment = 0
             },
             .pmf_cfg = {
                 .capable = false,
                 .required = false,
             },
+            .rm_enabled = 1,
+            .btm_enabled = 1,
+            .mbo_enabled = 1,
+            .ft_enabled =1,
+            .owe_enabled = 0,
+            .transition_disable = 1,
+            .disable_wpa3_compatible_mode = 1,
+            .reserved1 = 25,
             .sae_pwe_h2e = (wifi_sae_pwe_method_t)WPA3_SAE_PWE_UNSPECIFIED,
             .sae_pk_mode = WPA3_SAE_PK_MODE_DISABLED,
             .failure_retry_cnt = CONFIG_WIFI_MAXIMUM_RETRY,
+            .he_dcm_set = 1,
+            .he_dcm_max_constellation_tx = 2,
+            .he_dcm_max_constellation_rx = 2,
+            .he_mcs9_enabled = 1,
+            .he_su_beamformee_disabled = 1,
+            .he_trig_su_bmforming_feedback_disabled = 1,
+            .he_trig_mu_bmforming_partial_feedback_disabled = 1,
+            .he_trig_cqi_feedback_disabled = 1,
+            .vht_su_beamformee_disabled = 1,
+            .vht_mu_beamformee_disabled = 1,
+            .vht_mcs8_enabled = 1,
+            .reserved2 = 19,
             .sae_h2e_identifier = "",
         },
     };
@@ -249,8 +270,8 @@ WifiStation::WifiStation(void)
         WIFI_EVENT, 
         ESP_EVENT_ANY_ID,
         &wifi_event_handler, 
-        &m_wifi_event_group,
-        &m_instance_any_id);
+        &m_wifiEventGroup,
+        &m_instanceAnyId);
     check_event_register_error(result);
     
     result = esp_event_handler_instance_register(
@@ -258,7 +279,7 @@ WifiStation::WifiStation(void)
         IP_EVENT_STA_GOT_IP,
         &netif_event_handler,
         NULL,
-        &m_instance_got_ip);
+        &m_instanceGotIp);
     check_event_register_error(result);
 
     ESP_LOGI("WIFI station event", "Registered events");

@@ -1,3 +1,5 @@
+.metadata/
+.vscode/
 .cproject
 .project
 .settings/
