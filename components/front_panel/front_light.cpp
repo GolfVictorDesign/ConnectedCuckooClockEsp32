@@ -144,31 +144,19 @@ FrontLight::~FrontLight(void)
 }
 
 void FrontLight::update(
-                    const uint8_t intensity, 
                     const uint8_t led_red, 
                     const uint8_t led_green, 
                     const uint8_t led_blue ){
-    
-    if( intensity > 10)
-    {
-        ESP_LOGW(m_logTag, "Update: Value of parameter above the limit, abort update");
-        ESP_LOGW(m_logTag, "Update: Value of parameter intensity = %u", intensity);
-    }
-    else if( intensity == 0 ){
+    m_ledColour.red = led_red;
+    m_ledColour.green = led_green;
+    m_ledColour.blue = led_blue;
 
-    }
-    else {
-        m_ledColour.red = led_red / (10 - intensity);
-        m_ledColour.green = led_green / (10 - intensity);
-        m_ledColour.blue = led_blue / (10 - intensity);
-
-        ESP_ERROR_CHECK(rmt_transmit(
-                                m_ledChannelHdl, 
-                                m_simpleEncoderHdl,
-                                &m_ledColour, 
-                                sizeof(m_ledColour),
-                                &m_rmtTxCfg));
-        ESP_ERROR_CHECK(rmt_tx_wait_all_done(m_ledChannelHdl, portMAX_DELAY));   
-    }
+    ESP_ERROR_CHECK(rmt_transmit(
+                            m_ledChannelHdl, 
+                            m_simpleEncoderHdl,
+                            &m_ledColour, 
+                            sizeof(m_ledColour),
+                            &m_rmtTxCfg));
+    ESP_ERROR_CHECK(rmt_tx_wait_all_done(m_ledChannelHdl, portMAX_DELAY));   
 }
 

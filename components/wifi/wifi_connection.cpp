@@ -113,19 +113,27 @@ void WifiConnection::wifi_event_handler(
     }
 }
 
-static void netif_event_handler(
-    void* arg, 
-    esp_event_base_t event_base,
-    int32_t event_id, 
-    void* event_data)
+void WifiConnection::ip_event_handler_thunk(
+                                            void* arg, 
+                                            esp_event_base_t event_base,
+                                            int32_t event_id, 
+                                            void* event_data )
+{
+    WifiConnection* instance = static_cast<WifiConnection*>(arg);
+    instance->ip_event_handler(nullptr, event_base, event_id, event_data);
+}
+
+void WifiConnection::ip_event_handler(
+                                    void* arg, 
+                                    esp_event_base_t event_base,
+                                    int32_t event_id, 
+                                    void* event_data )
 {
     if (event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*)event_data;
-        ESP_LOGI("netif_event_handler", "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
-        //xEventGroupSetBits(*p_event_group, WIFI_CONNECTED_BIT);
+        ESP_LOGI(m_logTag, "got ip:" IPSTR, IP2STR(&event->ip_info.ip));
     }
 }
-
 
 WifiConnection::WifiConnection(void)
 {
@@ -147,10 +155,10 @@ WifiConnection::WifiConnection(void)
      */
     m_wifiEventGroup = xEventGroupCreate();
     m_netifEventGroup = xEventGroupCreate();
+    result = esp_event_loop_create_default();
 
     ESP_ERROR_CHECK(esp_netif_init());
 
-    result = esp_event_loop_create_default();
     switch (result)
     {
         case ESP_ERR_NO_MEM:
@@ -277,8 +285,8 @@ WifiStation::WifiStation(void)
     result = esp_event_handler_instance_register(
         IP_EVENT,
         IP_EVENT_STA_GOT_IP,
-        &netif_event_handler,
-        NULL,
+        &ip_event_handler_thunk,
+        this,
         &m_instanceGotIp);
     check_event_register_error(result);
 

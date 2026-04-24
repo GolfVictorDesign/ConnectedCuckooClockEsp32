@@ -18,9 +18,9 @@ FrontPanel::~FrontPanel() {
 
 esp_err_t FrontPanel::update(void)
 {
-    static uint8_t blue = 0;
-    m_frontLight.update(1, 255, 0, blue);
-    blue += 5;
+    static uint8_t led_blue = 0;
+    m_frontLight.update(30, 5, 0);
+    led_blue += 5;
     return ESP_OK;    
 }
 

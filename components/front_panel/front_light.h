@@ -21,8 +21,8 @@ class FrontLight
     
         struct led_colour
         {
-            uint8_t red;
             uint8_t green;
+            uint8_t red;
             uint8_t blue;
         };
 
@@ -63,7 +63,6 @@ class FrontLight
         ~FrontLight(void);
 
         void update(
-                const uint8_t intensity, 
                 const uint8_t led_red, 
                 const uint8_t led_green, 
                 const uint8_t led_blue );
